@@ -202,13 +202,15 @@ function renderCards() {
   
   grid.innerHTML = state.inventory.map(card => {
     const value = calculateValue(card);
-    // Use card_id for the API call, as that's the actual card definition ID
     const cardId = card.card_id || card.id;
+    const imageHtml = card.image_url 
+      ? `<img src="${card.image_url}" alt="${card.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`
+      : getIcon(card.collection_name || card.name);
     
     return `
       <div class="card-item ${card.rarity}" onclick="viewCard('${cardId}', '${card.id}')">
         <span class="card-serial">#${card.serial_number || '?'}</span>
-        <div class="card-image">${getIcon(card.collection_name || card.name)}</div>
+        <div class="card-image">${imageHtml}</div>
         <div class="card-name">${card.name}</div>
         <div class="card-meta">
           <span class="rarity-dot ${card.rarity}"></span>
@@ -440,13 +442,17 @@ async function viewCard(cardId, inventoryId) {
     const invItem = state.inventory.find(i => i.id === inventoryId || i.card_id === cardId);
     const serial = invItem?.serial_number || '?';
     
+    const imageHtml = card.image_url
+      ? `<img src="${card.image_url}" alt="${card.name}" style="width:100%;height:100%;object-fit:cover;border-radius:20px">`
+      : getIcon(card.name);
+    
     showModal(`
       <div class="modal-header">
         <span class="modal-title">Card Details</span>
         <button class="modal-close" onclick="closeModal()">×</button>
       </div>
       <div class="card-detail">
-        <div class="card-detail-image ${card.rarity}">${getIcon(card.name)}</div>
+        <div class="card-detail-image ${card.rarity}">${imageHtml}</div>
         <div class="card-detail-name">${card.name}</div>
         <div class="card-detail-collection">${card.collection_name || 'Unknown Collection'}</div>
         <span class="card-detail-rarity ${card.rarity}">${card.rarity}</span>
@@ -530,25 +536,153 @@ function openAdminPanel() {
         <div class="admin-panel-btn-icon">✨</div>
         <div class="admin-panel-btn-info">
           <div class="admin-panel-btn-title">Create Collection</div>
-          <div class="admin-panel-btn-desc">Add a new NFT collection with custom design</div>
+          <div class="admin-panel-btn-desc">Add a new NFT collection</div>
         </div>
       </div>
       <div class="admin-panel-btn" onclick="showCreateCard()">
         <div class="admin-panel-btn-icon">🎴</div>
         <div class="admin-panel-btn-info">
           <div class="admin-panel-btn-title">Add Card</div>
-          <div class="admin-panel-btn-desc">Create new cards for existing collections</div>
+          <div class="admin-panel-btn-desc">Create new cards for collections</div>
+        </div>
+      </div>
+      <div class="admin-panel-btn" onclick="showDeleteCollection()" style="border-color:var(--error)">
+        <div class="admin-panel-btn-icon">🗑️</div>
+        <div class="admin-panel-btn-info">
+          <div class="admin-panel-btn-title" style="color:var(--error)">Delete Collection</div>
+          <div class="admin-panel-btn-desc">Remove collection and all cards</div>
+        </div>
+      </div>
+      <div class="admin-panel-btn" onclick="showDeleteCard()" style="border-color:var(--error)">
+        <div class="admin-panel-btn-icon">❌</div>
+        <div class="admin-panel-btn-info">
+          <div class="admin-panel-btn-title" style="color:var(--error)">Delete Card</div>
+          <div class="admin-panel-btn-desc">Remove specific card</div>
         </div>
       </div>
       <div class="admin-panel-btn" onclick="window.open('/admin','_blank')">
         <div class="admin-panel-btn-icon">📊</div>
         <div class="admin-panel-btn-info">
           <div class="admin-panel-btn-title">Full Dashboard</div>
-          <div class="admin-panel-btn-desc">Complete admin panel with analytics</div>
+          <div class="admin-panel-btn-desc">Complete admin panel</div>
         </div>
       </div>
     </div>
   `);
+}
+
+// Delete Collection
+function showDeleteCollection() {
+  if (state.collections.length === 0) {
+    showToast('No collections to delete', 'error');
+    return;
+  }
+  
+  showModal(`
+    <div class="modal-header">
+      <span class="modal-title">🗑️ Delete Collection</span>
+      <button class="modal-close" onclick="openAdminPanel()">←</button>
+    </div>
+    <p style="color:var(--error);margin-bottom:16px;font-size:13px">⚠️ This will delete ALL cards in the collection!</p>
+    <div class="form-group">
+      <label class="form-label">Select Collection</label>
+      <select class="form-input" id="delete-collection-select">
+        ${state.collections.map(c => `<option value="${c.id}">${c.name} (${c.total_cards} cards)</option>`).join('')}
+      </select>
+    </div>
+    <button class="btn" style="background:var(--error)" onclick="confirmDeleteCollection()">🗑️ Delete Collection</button>
+  `);
+}
+
+async function confirmDeleteCollection() {
+  const colId = document.getElementById('delete-collection-select').value;
+  const col = state.collections.find(c => c.id === colId);
+  
+  if (!confirm(`Are you sure you want to delete "${col?.name}"? This cannot be undone!`)) return;
+  
+  try {
+    const result = await api.request(`/collections/${colId}`, 'DELETE');
+    if (result.error) {
+      showToast(result.error, 'error');
+    } else {
+      showToast('Collection deleted!');
+      await loadCollections();
+      await loadInventory();
+      render();
+      openAdminPanel();
+    }
+  } catch (err) {
+    showToast('Error deleting collection', 'error');
+  }
+}
+
+// Delete Card
+function showDeleteCard() {
+  if (state.collections.length === 0) {
+    showToast('No collections available', 'error');
+    return;
+  }
+  
+  showModal(`
+    <div class="modal-header">
+      <span class="modal-title">❌ Delete Card</span>
+      <button class="modal-close" onclick="openAdminPanel()">←</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Select Collection</label>
+      <select class="form-input" id="delete-card-collection" onchange="loadCardsForDelete()">
+        ${state.collections.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Select Card</label>
+      <select class="form-input" id="delete-card-select">
+        <option>Loading...</option>
+      </select>
+    </div>
+    <button class="btn" style="background:var(--error)" onclick="confirmDeleteCard()">❌ Delete Card</button>
+  `);
+  
+  loadCardsForDelete();
+}
+
+async function loadCardsForDelete() {
+  const colId = document.getElementById('delete-card-collection').value;
+  const col = await api.getCollection(colId);
+  const select = document.getElementById('delete-card-select');
+  
+  if (col.cards && col.cards.length > 0) {
+    select.innerHTML = col.cards.map(c => 
+      `<option value="${c.id}">${c.name} (${c.rarity})</option>`
+    ).join('');
+  } else {
+    select.innerHTML = '<option value="">No cards in this collection</option>';
+  }
+}
+
+async function confirmDeleteCard() {
+  const cardId = document.getElementById('delete-card-select').value;
+  if (!cardId) {
+    showToast('Select a card first', 'error');
+    return;
+  }
+  
+  if (!confirm('Are you sure you want to delete this card? This cannot be undone!')) return;
+  
+  try {
+    const result = await api.request(`/cards/${cardId}`, 'DELETE');
+    if (result.error) {
+      showToast(result.error, 'error');
+    } else {
+      showToast('Card deleted!');
+      await loadCollections();
+      await loadInventory();
+      render();
+      showDeleteCard(); // Stay on delete screen
+    }
+  } catch (err) {
+    showToast('Error deleting card', 'error');
+  }
 }
 
 // Create Collection with beautiful form and image upload

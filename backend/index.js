@@ -63,8 +63,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Ensure uploads directory exists
+import fs from 'fs';
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('📁 Created uploads directory');
+}
+
 // Static files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(uploadsDir, { maxAge: '1d' }));
 app.use('/admin', express.static(path.join(__dirname, '../frontend/admin')));
 app.use('/', express.static(path.join(__dirname, '../frontend')));
 
