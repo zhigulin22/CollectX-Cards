@@ -1,0 +1,20 @@
+{
+  "name": "collectx-wallet",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "db:push": "pnpm --filter backend db:push",
+    "db:generate": "pnpm --filter backend db:generate",
+    "db:seed": "pnpm --filter backend db:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "packageManager": "pnpm@9.14.2",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
