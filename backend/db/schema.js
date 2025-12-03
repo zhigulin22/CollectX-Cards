@@ -85,6 +85,55 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   window_start INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
+-- Wallets
+CREATE TABLE IF NOT EXISTS wallets (
+  id TEXT PRIMARY KEY,
+  user_id TEXT UNIQUE NOT NULL,
+  balance_usdt REAL DEFAULT 0,
+  balance_x INTEGER DEFAULT 0,
+  ton_address TEXT,
+  created_at INTEGER DEFAULT (strftime('%s', 'now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Wallet transactions
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  amount REAL NOT NULL,
+  description TEXT,
+  related_user_id TEXT,
+  created_at INTEGER DEFAULT (strftime('%s', 'now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Wallets (USDT balance)
+CREATE TABLE IF NOT EXISTS wallets (
+  id TEXT PRIMARY KEY,
+  user_id TEXT UNIQUE NOT NULL,
+  balance_usdt TEXT DEFAULT '0.00',
+  ton_address TEXT,
+  created_at INTEGER DEFAULT (strftime('%s', 'now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Wallet transactions history
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('swap','send','receive','deposit','withdraw')),
+  currency TEXT NOT NULL CHECK(currency IN ('USDT','X')),
+  amount TEXT NOT NULL,
+  balance_after TEXT NOT NULL,
+  fee TEXT,
+  description TEXT,
+  related_user_id TEXT,
+  created_at INTEGER DEFAULT (strftime('%s', 'now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(user_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_card ON inventory(card_id);
@@ -93,6 +142,8 @@ CREATE INDEX IF NOT EXISTS idx_cards_rarity ON cards(rarity);
 CREATE INDEX IF NOT EXISTS idx_users_telegram ON users(telegram_id);
 CREATE INDEX IF NOT EXISTS idx_logs_user ON action_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_logs_time ON action_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_user ON wallet_transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_time ON wallet_transactions(created_at);
 `;
 
 // Rank System

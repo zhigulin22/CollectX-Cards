@@ -10,6 +10,8 @@ import cardsRouter from './routes/cards.js';
 import boxesRouter from './routes/boxes.js';
 import adminRouter from './routes/admin.js';
 import uploadsRouter from './routes/uploads.js';
+import walletRouter from './routes/wallet.js';
+import walletRouter from './routes/wallet.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -53,6 +55,8 @@ app.use('/api/cards', cardsRouter);
 app.use('/api/boxes', boxesRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/uploads', uploadsRouter);
+app.use('/api/wallet', walletRouter);
+app.use('/api/wallet', walletRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
