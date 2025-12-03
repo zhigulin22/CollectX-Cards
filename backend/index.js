@@ -2,6 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { initDB } from './db/database.js';
 import usersRouter from './routes/users.js';
@@ -10,7 +11,6 @@ import cardsRouter from './routes/cards.js';
 import boxesRouter from './routes/boxes.js';
 import adminRouter from './routes/admin.js';
 import uploadsRouter from './routes/uploads.js';
-import walletRouter from './routes/wallet.js';
 import walletRouter from './routes/wallet.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,7 +34,7 @@ app.use(cors({
 }));
 
 // Body parser with limit
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '5mb' }));
 
 // Request logging
 app.use((req, res, next) => {
@@ -56,7 +56,6 @@ app.use('/api/boxes', boxesRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/wallet', walletRouter);
-app.use('/api/wallet', walletRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -68,7 +67,6 @@ app.get('/api/health', (req, res) => {
 });
 
 // Ensure uploads directory exists
-import fs from 'fs';
 const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
@@ -100,15 +98,16 @@ initDB().then(() => {
   app.listen(PORT, () => {
     console.log(`
 ╔═══════════════════════════════════════════════════╗
-║           🎴 CollectX Server v2.0                 ║
+║        🎴 CollectX Server v2.1                    ║
 ╠═══════════════════════════════════════════════════╣
 ║  🌐 App:    http://localhost:${PORT}                 ║
 ║  📊 Admin:  http://localhost:${PORT}/admin            ║
 ║  🔧 API:    http://localhost:${PORT}/api              ║
+║  👛 Wallet: http://localhost:${PORT}/api/wallet       ║
 ╠═══════════════════════════════════════════════════╣
 ║  ✅ Database ready                                ║
+║  ✅ Cards + Wallet integrated                     ║
 ║  ✅ Security middleware enabled                   ║
-║  ✅ Rate limiting active                          ║
 ╚═══════════════════════════════════════════════════╝
     `);
   });
