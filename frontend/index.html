@@ -1,169 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CollectX - NFT Collection Game</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head>
-<body>
-    <div id="app">
-        <!-- Header with Profile & Balance -->
-        <header class="header">
-            <div class="profile-mini" onclick="showProfile()">
-                <div class="avatar" id="avatar">👤</div>
-                <div class="user-info">
-                    <span class="username" id="username">Loading...</span>
-                    <span class="rank-badge" id="rank-badge">Bronze</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="balance" id="balance">🪙 0</div>
-            </div>
-        </header>
-
-        <!-- Tab Navigation -->
-        <nav class="tab-nav">
-            <button class="tab-btn active" data-tab="cards" onclick="switchTab('cards')">
-                <span class="tab-icon">🎴</span>
-                <span class="tab-label">Cards</span>
-            </button>
-            <button class="tab-btn" data-tab="wallet" onclick="switchTab('wallet')">
-                <span class="tab-icon">👛</span>
-                <span class="tab-label">Wallet</span>
-            </button>
-        </nav>
-
-        <!-- Cards Tab -->
-        <div id="tab-cards" class="tab-content active">
-            <!-- Action Buttons -->
-            <div class="buttons-row" id="buttons-row">
-                <button class="main-button pack-button" onclick="openPacksModal()">
-                    <span class="btn-icon">📦</span>
-                    <span class="btn-text">Open Packs</span>
-                    <span class="pack-badge" id="pack-badge" style="display:none">FREE</span>
-                </button>
-            </div>
-
-            <!-- Collections Carousel -->
-            <section class="section">
-                <div class="section-header">
-                    <h2>Collections</h2>
-                    <span class="section-count" id="collections-count">0</span>
-                </div>
-                <div class="collections-carousel" id="collections"></div>
-            </section>
-
-            <!-- My Cards Section -->
-            <section class="section">
-                <div class="section-header">
-                    <h2>My Cards</h2>
-                    <span class="section-count" id="cards-total">0 NFTs</span>
-                </div>
-                <div class="filters">
-                    <select class="filter" id="filter-collection" onchange="applyFilters()">
-                        <option value="">All Collections</option>
-                    </select>
-                    <select class="filter" id="filter-rarity" onchange="applyFilters()">
-                        <option value="">All Rarities</option>
-                        <option value="legendary">⭐ Legendary</option>
-                        <option value="epic">💜 Epic</option>
-                        <option value="rare">💙 Rare</option>
-                        <option value="common">⚪ Common</option>
-                    </select>
-                    <select class="filter" id="filter-sort" onchange="applyFilters()">
-                        <option value="newest">Newest</option>
-                        <option value="rarity">Rarest</option>
-                        <option value="value">Value</option>
-                    </select>
-                </div>
-            </section>
-
-            <!-- Cards Grid -->
-            <div class="cards-grid" id="cards-grid"></div>
-        </div>
-
-        <!-- Wallet Tab -->
-        <div id="tab-wallet" class="tab-content">
-            <!-- Portfolio Value -->
-            <div class="wallet-portfolio">
-                <p class="portfolio-label">Total Portfolio</p>
-                <div class="portfolio-value">
-                    <span class="portfolio-amount" id="portfolio-total">$0.00</span>
-                    <span class="portfolio-currency">USD</span>
-                </div>
-            </div>
-
-            <!-- Asset Cards -->
-            <div class="wallet-assets">
-                <div class="asset-card usdt">
-                    <div class="asset-left">
-                        <span class="asset-icon">💵</span>
-                        <div class="asset-info">
-                            <p class="asset-name">USDT</p>
-                            <p class="asset-full">Tether</p>
-                        </div>
-                    </div>
-                    <div class="asset-right">
-                        <p class="asset-amount" id="wallet-usdt">0.00</p>
-                        <p class="asset-usd">$<span id="wallet-usdt-usd">0.00</span></p>
-                    </div>
-                </div>
-
-                <div class="asset-card xtoken">
-                    <div class="asset-left">
-                        <span class="asset-icon">🪙</span>
-                        <div class="asset-info">
-                            <p class="asset-name">$X</p>
-                            <p class="asset-full">CollectX Token</p>
-                        </div>
-                    </div>
-                    <div class="asset-right">
-                        <p class="asset-amount" id="wallet-x">0</p>
-                        <p class="asset-usd">≈ $<span id="wallet-x-usd">0.00</span></p>
-                        <p class="asset-rate">1 $X = $0.01</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Wallet Actions -->
-            <div class="wallet-actions">
-                <button class="wallet-btn receive" onclick="showReceiveModal()">
-                    <span class="wallet-btn-icon">↓</span>
-                    <span>Receive</span>
-                </button>
-                <button class="wallet-btn swap" onclick="showSwapModal()">
-                    <span class="wallet-btn-icon">⇄</span>
-                    <span>Swap</span>
-                </button>
-                <button class="wallet-btn send" onclick="showSendModal()">
-                    <span class="wallet-btn-icon">↑</span>
-                    <span>Send</span>
-                </button>
-            </div>
-
-            <!-- Transaction History -->
-            <div class="wallet-history">
-                <div class="history-header">
-                    <h3>Recent Activity</h3>
-                    <button class="history-more" onclick="showFullHistory()">View All ›</button>
-                </div>
-                <div class="history-list" id="wallet-history"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Overlay -->
-    <div class="modal-overlay" id="modal-overlay"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <meta name="description" content="CollectX - Telegram Wallet Mini App" />
+    <title>CollectX Wallet</title>
     
-    <!-- Modal Container -->
-    <div class="modal" id="modal"></div>
-
-    <script src="js/api.js?v=4"></script>
-    <script src="js/wallet.js?v=4"></script>
-    <script src="js/app.js?v=4"></script>
-</body>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
+
+
