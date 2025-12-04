@@ -1,13 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import MainApp from './MainApp';
+import App from './App';
 import './index.css';
 import { TonConnectAppProvider } from './ton/TonConnectProvider';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <TonConnectAppProvider>
-      <MainApp />
+      <App />
     </TonConnectAppProvider>
   </React.StrictMode>
 );
