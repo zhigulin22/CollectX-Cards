@@ -30,7 +30,8 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   // Auth
-  authDev: () => request<AuthResponse>('/auth/dev', { method: 'POST', body: '{}' }),
+  // Use first test user (alex_crypto) with balance for dev mode
+  authDev: () => request<AuthResponse>('/auth/dev', { method: 'POST', body: JSON.stringify({ telegramId: 100000000 }) }),
   authTelegram: (initData: string) =>
     request<AuthResponse>('/auth/telegram', {
       method: 'POST',

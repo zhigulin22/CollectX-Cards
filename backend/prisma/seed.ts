@@ -343,7 +343,147 @@ async function main() {
   }
   console.log('   Created 20 audit log entries\n');
 
-  // 7. Summary
+  // 7. Create card collections and packs
+  console.log('🃏 Creating card collections...');
+  
+  // Clear existing card data
+  await db.packOpening.deleteMany();
+  await db.userCard.deleteMany();
+  await db.cardTemplate.deleteMany();
+  await db.cardPack.deleteMany();
+  await db.cardCollection.deleteMany();
+
+  // Create collections
+  const collections = await Promise.all([
+    db.cardCollection.create({
+      data: {
+        name: 'Crypto Legends',
+        description: 'Legendary figures of the crypto world',
+        icon: '🚀',
+        sortOrder: 1,
+      },
+    }),
+    db.cardCollection.create({
+      data: {
+        name: 'DeFi Heroes',
+        description: 'Champions of decentralized finance',
+        icon: '🦸',
+        sortOrder: 2,
+      },
+    }),
+    db.cardCollection.create({
+      data: {
+        name: 'NFT Icons',
+        description: 'Famous NFT artworks and collections',
+        icon: '🎨',
+        sortOrder: 3,
+      },
+    }),
+    db.cardCollection.create({
+      data: {
+        name: 'Meme Coins',
+        description: 'The most viral meme tokens',
+        icon: '🐕',
+        sortOrder: 4,
+      },
+    }),
+  ]);
+
+  console.log('   Created 4 collections');
+
+  // Create card templates
+  const cardData = [
+    // Crypto Legends
+    { collectionId: collections[0].id, name: 'Satoshi Nakamoto', emoji: '👤', rarity: 'LEGENDARY' as const, sellPriceUsdt: 50, sellPriceX: 5000, description: 'The mysterious creator of Bitcoin' },
+    { collectionId: collections[0].id, name: 'Vitalik Buterin', emoji: '🦄', rarity: 'LEGENDARY' as const, sellPriceUsdt: 40, sellPriceX: 4000, description: 'Ethereum co-founder and visionary' },
+    { collectionId: collections[0].id, name: 'CZ', emoji: '🔶', rarity: 'EPIC' as const, sellPriceUsdt: 15, sellPriceX: 1500, description: 'Binance founder' },
+    { collectionId: collections[0].id, name: 'Elon Musk', emoji: '🚀', rarity: 'EPIC' as const, sellPriceUsdt: 20, sellPriceX: 2000, description: 'The Doge Father' },
+    { collectionId: collections[0].id, name: 'SBF', emoji: '💀', rarity: 'RARE' as const, sellPriceUsdt: 5, sellPriceX: 500, description: 'The fallen exchange king' },
+    
+    // DeFi Heroes
+    { collectionId: collections[1].id, name: 'Yield Farmer', emoji: '🌾', rarity: 'COMMON' as const, sellPriceUsdt: 1, sellPriceX: 100, description: 'Master of APY hunting' },
+    { collectionId: collections[1].id, name: 'Liquidity Whale', emoji: '🐋', rarity: 'RARE' as const, sellPriceUsdt: 5, sellPriceX: 500, description: 'Provider of deep liquidity' },
+    { collectionId: collections[1].id, name: 'Flash Loan Master', emoji: '⚡', rarity: 'EPIC' as const, sellPriceUsdt: 15, sellPriceX: 1500, description: 'Arbitrage in one block' },
+    { collectionId: collections[1].id, name: 'Governance King', emoji: '👑', rarity: 'LEGENDARY' as const, sellPriceUsdt: 35, sellPriceX: 3500, description: 'Controls the DAOs' },
+    
+    // NFT Icons
+    { collectionId: collections[2].id, name: 'Bored Ape', emoji: '🦍', rarity: 'LEGENDARY' as const, sellPriceUsdt: 45, sellPriceX: 4500, description: 'The most exclusive club' },
+    { collectionId: collections[2].id, name: 'Crypto Punk', emoji: '👾', rarity: 'EPIC' as const, sellPriceUsdt: 20, sellPriceX: 2000, description: 'OG pixel art' },
+    { collectionId: collections[2].id, name: 'Doodle', emoji: '🌈', rarity: 'RARE' as const, sellPriceUsdt: 8, sellPriceX: 800, description: 'Colorful community' },
+    { collectionId: collections[2].id, name: 'Azuki', emoji: '⛩️', rarity: 'EPIC' as const, sellPriceUsdt: 18, sellPriceX: 1800, description: 'Anime style NFT' },
+    
+    // Meme Coins
+    { collectionId: collections[3].id, name: 'Doge', emoji: '🐕', rarity: 'RARE' as const, sellPriceUsdt: 3, sellPriceX: 300, description: 'Much wow, very coin' },
+    { collectionId: collections[3].id, name: 'Shiba Inu', emoji: '🐕‍🦺', rarity: 'RARE' as const, sellPriceUsdt: 3, sellPriceX: 300, description: 'The Doge killer' },
+    { collectionId: collections[3].id, name: 'Pepe', emoji: '🐸', rarity: 'EPIC' as const, sellPriceUsdt: 10, sellPriceX: 1000, description: 'Feels good man' },
+    { collectionId: collections[3].id, name: 'Wojak', emoji: '😢', rarity: 'COMMON' as const, sellPriceUsdt: 1, sellPriceX: 100, description: 'The feel guy' },
+    { collectionId: collections[3].id, name: 'Moon Rocket', emoji: '🚀', rarity: 'COMMON' as const, sellPriceUsdt: 1, sellPriceX: 100, description: 'To the moon!' },
+    { collectionId: collections[3].id, name: 'Diamond Hands', emoji: '💎', rarity: 'RARE' as const, sellPriceUsdt: 5, sellPriceX: 500, description: 'Never selling' },
+  ];
+
+  for (const card of cardData) {
+    await db.cardTemplate.create({ data: card });
+  }
+  console.log(`   Created ${cardData.length} card templates`);
+
+  // Create packs
+  await db.cardPack.create({
+    data: {
+      name: 'Daily Pack',
+      description: 'Free pack every 24 hours',
+      icon: '🎁',
+      cardsCount: 3,
+      cooldownSeconds: 24 * 60 * 60,
+      gradient: 'from-emerald-500 to-teal-600',
+      sortOrder: 1,
+    },
+  });
+
+  await db.cardPack.create({
+    data: {
+      name: 'Starter Pack',
+      description: '5 cards with 1 guaranteed rare',
+      icon: '📦',
+      priceUsdt: 2,
+      priceX: 200,
+      cardsCount: 5,
+      guaranteedRarity: 'RARE',
+      gradient: 'from-blue-500 to-cyan-600',
+      sortOrder: 2,
+    },
+  });
+
+  await db.cardPack.create({
+    data: {
+      name: 'Premium Pack',
+      description: '5 cards with 1 guaranteed epic',
+      icon: '💎',
+      priceUsdt: 10,
+      priceX: 1000,
+      cardsCount: 5,
+      guaranteedRarity: 'EPIC',
+      gradient: 'from-purple-500 to-violet-600',
+      sortOrder: 3,
+    },
+  });
+
+  await db.cardPack.create({
+    data: {
+      name: 'Legendary Pack',
+      description: '5 cards with 1 guaranteed legendary!',
+      icon: '👑',
+      priceUsdt: 50,
+      priceX: 5000,
+      cardsCount: 5,
+      guaranteedRarity: 'LEGENDARY',
+      gradient: 'from-amber-500 to-orange-600',
+      sortOrder: 4,
+    },
+  });
+
+  console.log('   Created 4 packs\n');
+
+  // 8. Summary
   const stats = await Promise.all([
     db.user.count(),
     db.wallet.count(),
@@ -351,6 +491,9 @@ async function main() {
     db.withdrawRequest.count(),
     db.withdrawRequest.count({ where: { status: 'PENDING' } }),
     db.auditLog.count(),
+    db.cardCollection.count(),
+    db.cardTemplate.count(),
+    db.cardPack.count(),
   ]);
 
   console.log('═══════════════════════════════════════════');
@@ -361,11 +504,14 @@ async function main() {
   console.log(`   📊 Transactions:       ${stats[2]}`);
   console.log(`   💸 Withdraw Requests:  ${stats[3]} (${stats[4]} pending)`);
   console.log(`   📋 Audit Logs:         ${stats[5]}`);
+  console.log(`   🃏 Collections:        ${stats[6]}`);
+  console.log(`   🎴 Card Templates:     ${stats[7]}`);
+  console.log(`   📦 Packs:              ${stats[8]}`);
   console.log('═══════════════════════════════════════════\n');
   
   console.log('🔑 Test Admin Key: Check your .env ADMIN_API_KEY');
-  console.log('🌐 Admin Panel:    http://localhost:3000/admin');
-  console.log('📖 API Docs:       http://localhost:3001/docs\n');
+  console.log('🌐 Admin Panel:    http://localhost:5173/admin');
+  console.log('📖 API Docs:       http://localhost:3002/docs\n');
 }
 
 main()

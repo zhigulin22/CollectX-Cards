@@ -4,6 +4,10 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { env, validateProductionEnv, getAllowedOrigins } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -12,9 +16,13 @@ import { authRoutes } from './routes/auth.js';
 import { walletRoutes } from './routes/wallet/index.js';
 import { adminRoutes } from './routes/admin.js';
 import { webhookRoutes } from './routes/webhook.js';
+import { cardsRoutes } from './routes/cards.js';
+import { adminCardsRoutes } from './routes/adminCards.js';
 import { db } from './db.js';
 import { setLogger } from './utils/logger.js';
 import { settingsService } from './services/settings.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Validate production environment
 validateProductionEnv();
@@ -66,6 +74,8 @@ await app.register(swagger, {
       { name: 'Wallet', description: 'Wallet operations' },
       { name: 'Admin', description: 'Admin endpoints (requires API key)' },
       { name: 'Webhook', description: 'Webhook endpoints for external services' },
+      { name: 'Cards', description: 'Public card collection endpoints' },
+      { name: 'Admin Cards', description: 'Admin card management endpoints' },
     ],
     components: {
       securitySchemes: {
@@ -95,6 +105,39 @@ await app.register(swaggerUi, {
 // Rate Limiting (global)
 await app.register(rateLimitPlugin);
 
+// Multipart (for file uploads)
+await app.register(multipart, {
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+});
+
+// Static files (for uploaded images)
+await app.register(fastifyStatic, {
+  root: path.join(process.cwd(), 'uploads'),
+  prefix: '/uploads/',
+});
+
+// Serve frontend static files in production
+if (env.NODE_ENV === 'production') {
+  const frontendPath = path.join(process.cwd(), 'public');
+  await app.register(fastifyStatic, {
+    root: frontendPath,
+    prefix: '/',
+    wildcard: false, // Don't serve index.html for all routes
+  });
+
+  // Serve index.html for all non-API routes (SPA fallback)
+  app.setNotFoundHandler(async (request, reply) => {
+    // If it's an API route, return 404
+    if (request.url.startsWith('/api') || request.url.startsWith('/docs') || request.url.startsWith('/uploads')) {
+      return reply.status(404).send({ error: 'Not found' });
+    }
+    // Otherwise serve index.html for SPA routing
+    return reply.sendFile('index.html', frontendPath);
+  });
+}
+
 // ============ AUTH DECORATOR ============
 
 app.decorate('authenticate', async function (request: any, reply: any) {
@@ -108,7 +151,9 @@ app.decorate('authenticate', async function (request: any, reply: any) {
 // ============ ERROR HANDLERS ============
 
 app.setErrorHandler(errorHandler);
-app.setNotFoundHandler(notFoundHandler);
+if (env.NODE_ENV !== 'production') {
+  app.setNotFoundHandler(notFoundHandler);
+}
 
 // ============ ROUTES ============
 
@@ -123,13 +168,17 @@ app.get('/health', async () => ({
 // API v1 routes
 app.register(authRoutes, { prefix: '/api/v1/auth' });
 app.register(walletRoutes, { prefix: '/api/v1/wallet' });
+app.register(cardsRoutes, { prefix: '/api/v1/cards' });
 app.register(adminRoutes, { prefix: '/api/v1/admin' });
+app.register(adminCardsRoutes, { prefix: '/api/v1/admin/cards' });
 app.register(webhookRoutes, { prefix: '/api/v1/webhook' });
 
 // Legacy routes (без версии) - для обратной совместимости
 app.register(authRoutes, { prefix: '/api/auth' });
 app.register(walletRoutes, { prefix: '/api/wallet' });
+app.register(cardsRoutes, { prefix: '/api/cards' });
 app.register(adminRoutes, { prefix: '/api/admin' });
+app.register(adminCardsRoutes, { prefix: '/api/admin/cards' });
 app.register(webhookRoutes, { prefix: '/api/webhook' });
 
 // ============ GRACEFUL SHUTDOWN ============
@@ -199,7 +248,7 @@ async function start() {
 ║   Health:  http://localhost:${env.PORT}/health             ║
 ║   Env:     ${env.NODE_ENV.padEnd(11)}                         ║
 ║                                                       ║
-╚═══════════════════════════════════════════════════════╝
+╚═══════════════════════════════════════════════════╝
     `);
   } catch (err) {
     app.log.fatal({ err }, 'Error starting server');

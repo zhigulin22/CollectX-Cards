@@ -183,4 +183,129 @@ model Settings {
   @@map("settings")
 }
 
+// ============ CARD COLLECTIONS ============
+
+model CardCollection {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  imageUrl    String?  @map("image_url") @db.VarChar(500)
+  icon        String   @default("🃏") @db.VarChar(10)
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  cardTemplates CardTemplate[]
+
+  @@map("card_collections")
+}
+
+// ============ CARD TEMPLATES ============
+
+enum CardRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+model CardTemplate {
+  id           String      @id @default(uuid())
+  collectionId String      @map("collection_id")
+  name         String      @db.VarChar(100)
+  description  String?     @db.Text
+  imageUrl     String?     @map("image_url") @db.VarChar(500)
+  imageThumb   String?     @map("image_thumb") @db.VarChar(500) // Compressed thumbnail
+  emoji        String      @default("🃏") @db.VarChar(10)
+  rarity       CardRarity  @default(COMMON)
+  
+  // Sell prices
+  sellPriceUsdt Decimal    @default(0) @map("sell_price_usdt") @db.Decimal(10, 2)
+  sellPriceX    Decimal    @default(0) @map("sell_price_x") @db.Decimal(10, 2)
+  
+  // Drop chances (override default rarity weights)
+  dropWeight   Int         @default(100) @map("drop_weight")
+  
+  isActive     Boolean     @default(true) @map("is_active")
+  totalMinted  Int         @default(0) @map("total_minted")
+  maxSupply    Int?        @map("max_supply") // null = unlimited
+  
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  collection   CardCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  userCards    UserCard[]
+
+  @@index([collectionId])
+  @@index([rarity])
+  @@map("card_templates")
+}
+
+// ============ USER CARDS (Inventory) ============
+
+model UserCard {
+  id           String       @id @default(uuid())
+  userId       String       @map("user_id")
+  templateId   String       @map("template_id")
+  serialNumber Int          @map("serial_number")
+  mintedAt     DateTime     @default(now()) @map("minted_at")
+  
+  // For marketplace (future)
+  isListed     Boolean      @default(false) @map("is_listed")
+  listPrice    Decimal?     @map("list_price") @db.Decimal(10, 2)
+
+  template     CardTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, serialNumber])
+  @@index([userId])
+  @@index([templateId])
+  @@map("user_cards")
+}
+
+// ============ CARD PACKS ============
+
+model CardPack {
+  id              String   @id @default(uuid())
+  name            String   @db.VarChar(100)
+  description     String?  @db.Text
+  imageUrl        String?  @map("image_url") @db.VarChar(500)
+  icon            String   @default("📦") @db.VarChar(10)
+  
+  // Pricing (null = free)
+  priceUsdt       Decimal? @map("price_usdt") @db.Decimal(10, 2)
+  priceX          Decimal? @map("price_x") @db.Decimal(10, 2)
+  
+  cardsCount      Int      @default(3) @map("cards_count")
+  guaranteedRarity CardRarity? @map("guaranteed_rarity")
+  
+  // For free packs
+  cooldownSeconds Int?     @map("cooldown_seconds")
+  
+  gradient        String   @default("from-violet-500 to-purple-600") @db.VarChar(100)
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("card_packs")
+}
+
+// ============ PACK OPENING HISTORY ============
+
+model PackOpening {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  packId    String   @map("pack_id")
+  cardIds   String[] @map("card_ids") // Array of UserCard IDs
+  paidWith  String?  @map("paid_with") @db.VarChar(10) // USDT, X, or null for free
+  paidAmount Decimal? @map("paid_amount") @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([packId])
+  @@map("pack_openings")
+}
+
 

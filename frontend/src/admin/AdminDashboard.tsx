@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { adminApi, StatsResponse, WithdrawalItem, UserItem, RevenueResponse } from './api';
 import { UserModal } from './components/UserModal';
 import { ConfirmModal } from './components/ConfirmModal';
+import { CardsAdmin } from './CardsAdmin';
 
 // TON Explorer helpers
 const TON_EXPLORER_BASE = 'https://tonviewer.com';
@@ -23,7 +24,7 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type Tab = 'dashboard' | 'users' | 'withdrawals' | 'settings' | 'audit';
+type Tab = 'dashboard' | 'users' | 'withdrawals' | 'cards' | 'settings' | 'audit';
 
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -80,6 +81,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             { id: 'dashboard', label: '📊 Dashboard', badge: 0 },
             { id: 'users', label: '👥 Users', badge: 0 },
             { id: 'withdrawals', label: '💸 Withdrawals', badge: pendingCount },
+            { id: 'cards', label: '🃏 Cards', badge: 0 },
             { id: 'settings', label: '⚙️ Settings', badge: 0 },
             { id: 'audit', label: '📋 Audit Log', badge: 0 },
           ].map((t) => (
@@ -111,6 +113,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         {tab === 'withdrawals' && <WithdrawalsTab onUpdate={() => {
           adminApi.getStats().then((s) => setPendingCount(s.withdrawals.pending));
         }} />}
+        {tab === 'cards' && <CardsAdmin />}
         {tab === 'settings' && <SettingsTab />}
         {tab === 'audit' && <AuditTab />}
       </main>
